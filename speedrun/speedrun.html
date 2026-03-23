@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speedrun Timer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HOME SCREEN -->
+  <div id="screen-home">
+    <h1>Speedrun Timer</h1>
+    <div id="route-list"></div>
+    <button id="btn-new-route" class="btn-primary">+ New Route</button>
+  </div>
+
+  <!-- SETUP SCREEN -->
+  <div id="screen-setup" class="hidden">
+    <h2 id="setup-title">New Route</h2>
+    <div class="setup-section">
+      <label for="route-name-input">Route Name</label>
+      <input type="text" id="route-name-input" placeholder="e.g. Minecraft Any%" autocomplete="off">
+    </div>
+    <div class="setup-section">
+      <label>Splits</label>
+      <div id="split-list"></div>
+      <button id="btn-add-split" class="btn-secondary">+ Add Split</button>
+    </div>
+    <div id="setup-error" class="error-msg hidden"></div>
+    <div class="setup-actions">
+      <button id="btn-cancel-setup" class="btn-secondary">Cancel</button>
+      <button id="btn-save-route" class="btn-secondary">Save Route</button>
+      <button id="btn-start-run" class="btn-primary">Save &amp; Run</button>
+    </div>
+  </div>
+
+  <!-- RUN SCREEN -->
+  <div id="screen-run" class="hidden">
+    <div id="run-header">
+      <div id="route-name-display"></div>
+      <div id="total-timer">0:00.000</div>
+    </div>
+    <table id="splits-table">
+      <thead>
+        <tr>
+          <th class="col-name">Split</th>
+          <th class="col-gold">Gold</th>
+          <th class="col-time">Time</th>
+          <th class="col-delta">Delta</th>
+        </tr>
+      </thead>
+      <tbody id="splits-tbody"></tbody>
+    </table>
+    <div id="run-hint">Space = next split &nbsp;·&nbsp; Esc = cancel</div>
+  </div>
+
+  <!-- FINISH SCREEN -->
+  <div id="screen-finish" class="hidden">
+    <h2>Run Complete</h2>
+    <div id="finish-route-name"></div>
+    <div id="finish-total-time"></div>
+    <div id="finish-pb-comparison"></div>
+    <table id="finish-splits-table">
+      <thead>
+        <tr>
+          <th class="col-name">Split</th>
+          <th class="col-gold">Gold</th>
+          <th class="col-time">Time</th>
+          <th class="col-delta">Delta</th>
+        </tr>
+      </thead>
+      <tbody id="finish-splits-tbody"></tbody>
+    </table>
+    <div class="finish-actions">
+      <button id="btn-discard" class="btn-secondary">Discard</button>
+      <button id="btn-run-again" class="btn-secondary">Run Again</button>
+      <button id="btn-save" class="btn-primary">Save Run</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
