@@ -112,8 +112,20 @@ button:disabled { opacity: 0.4; cursor: default; }
   border-radius: 8px;
   padding: 0.9rem 1rem;
   display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.route-card-top {
+  display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.history-chart {
+  display: block;
+  width: 100%;
+  opacity: 0.9;
 }
 
 .route-card-info {
@@ -154,6 +166,75 @@ button:disabled { opacity: 0.4; cursor: default; }
 .route-card-actions button {
   padding: 0.35rem 0.75rem;
   font-size: 0.82rem;
+}
+
+/* ── STATS SCREEN ────────────────────────────────────── */
+
+#screen-stats {
+  width: 100%;
+  max-width: 560px;
+}
+
+.stats-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stats-header h2 {
+  margin: 0;
+}
+
+#stats-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.stats-cell {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+}
+
+.stats-value {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #eee;
+}
+
+.stats-label {
+  font-size: 0.72rem;
+  color: #a8dadc;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.25rem;
+}
+
+#stats-chart-wrap {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.history-chart-large {
+  display: block;
+  width: 100%;
+}
+
+#stats-no-data {
+  color: #a8dadc;
+  text-align: center;
+  padding: 2rem;
+  background: #16213e;
+  border: 1px dashed #0f3460;
+  border-radius: 8px;
 }
 
 /* ── SETUP SCREEN ────────────────────────────────────── */

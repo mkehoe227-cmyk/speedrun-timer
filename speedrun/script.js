@@ -27,7 +27,7 @@ function loadRoutes() {
       const gold = Array.isArray(r.goldSplits) && r.goldSplits.length === len
         ? r.goldSplits
         : Array(len).fill(null);
-      return { id: r.id, name: r.name, splitNames: r.splitNames, pb, goldSplits: gold, runCount: r.runCount || 0 };
+      return { id: r.id, name: r.name, splitNames: r.splitNames, pb, goldSplits: gold, runCount: r.runCount || 0, history: Array.isArray(r.history) ? r.history : [] };
     });
   } catch (_) {
     routes = [];
@@ -80,7 +80,7 @@ function formatDelta(ms) {
 // ── Screen switching ──────────────────────────────────────────────────────────
 
 function showOnly(id) {
-  ['screen-home', 'screen-setup', 'screen-run', 'screen-finish'].forEach(s => {
+  ['screen-home', 'screen-setup', 'screen-run', 'screen-finish', 'screen-stats'].forEach(s => {
     document.getElementById(s).classList.toggle('hidden', s !== id);
   });
 }
@@ -104,6 +104,9 @@ function renderHome() {
 function buildRouteCard(route) {
   const card = document.createElement('div');
   card.className = 'route-card';
+
+  const top = document.createElement('div');
+  top.className = 'route-card-top';
 
   const info = document.createElement('div');
   info.className = 'route-card-info';
@@ -144,6 +147,11 @@ function buildRouteCard(route) {
   btnEdit.textContent = 'Edit';
   btnEdit.addEventListener('click', () => renderSetup(route));
 
+  const btnStats = document.createElement('button');
+  btnStats.className = 'btn-secondary';
+  btnStats.textContent = 'Stats';
+  btnStats.addEventListener('click', () => renderStats(route));
+
   const btnDel = document.createElement('button');
   btnDel.className = 'btn-danger';
   btnDel.textContent = '✕';
@@ -151,12 +159,238 @@ function buildRouteCard(route) {
   btnDel.addEventListener('click', () => handleDeleteRoute(route.id));
 
   actions.appendChild(btnRun);
+  actions.appendChild(btnStats);
   actions.appendChild(btnEdit);
   actions.appendChild(btnDel);
 
-  card.appendChild(info);
-  card.appendChild(actions);
+  top.appendChild(info);
+  top.appendChild(actions);
+  card.appendChild(top);
+
   return card;
+}
+
+function buildHistoryChart(history) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const W = 300, H = 44, PX = 8, PY = 8;
+
+  const min = Math.min(...history);
+  const max = Math.max(...history);
+  const range = max - min || 1;
+
+  const toX = i => history.length === 1
+    ? W / 2
+    : PX + (i / (history.length - 1)) * (W - PX * 2);
+  const toY = ms => PY + (1 - (ms - min) / range) * (H - PY * 2);
+
+  const pts = history.map((ms, i) => ({ x: toX(i), y: toY(ms), ms }));
+
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', String(H));
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.classList.add('history-chart');
+
+  if (pts.length >= 2) {
+    const polyline = document.createElementNS(ns, 'polyline');
+    polyline.setAttribute('points', pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+    polyline.setAttribute('fill', 'none');
+    polyline.setAttribute('stroke', '#4a3f7a');
+    polyline.setAttribute('stroke-width', '1.5');
+    svg.appendChild(polyline);
+  }
+
+  const D = 4;
+  pts.forEach(p => {
+    const g = document.createElementNS(ns, 'g');
+    const diamond = document.createElementNS(ns, 'polygon');
+    diamond.setAttribute('points', [
+      `${p.x},${p.y - D}`,
+      `${p.x + D},${p.y}`,
+      `${p.x},${p.y + D}`,
+      `${p.x - D},${p.y}`
+    ].join(' '));
+    diamond.setAttribute('fill', '#8b80c8');
+    const title = document.createElementNS(ns, 'title');
+    title.textContent = formatTime(p.ms);
+    g.appendChild(diamond);
+    g.appendChild(title);
+    svg.appendChild(g);
+  });
+
+  return svg;
+}
+
+// ── STATS SCREEN ──────────────────────────────────────────────────────────────
+
+function renderStats(route) {
+  state = 'stats';
+  showOnly('screen-stats');
+
+  document.getElementById('stats-route-name').textContent = route.name;
+
+  const noData = document.getElementById('stats-no-data');
+  const chartWrap = document.getElementById('stats-chart-wrap');
+  const summary = document.getElementById('stats-summary');
+
+  summary.innerHTML = '';
+  chartWrap.innerHTML = '';
+
+  if (!route.history || route.history.length === 0) {
+    noData.classList.remove('hidden');
+    chartWrap.classList.add('hidden');
+    return;
+  }
+
+  noData.classList.add('hidden');
+  chartWrap.classList.remove('hidden');
+
+  // Summary stats
+  const pb = Math.min(...route.history);
+  const worst = Math.max(...route.history);
+  const avg = route.history.reduce((a, b) => a + b, 0) / route.history.length;
+
+  const stats = [
+    { label: 'Runs', value: route.history.length },
+    { label: 'PB', value: formatTime(pb) },
+    { label: 'Worst', value: formatTime(worst) },
+    { label: 'Average', value: formatTime(avg) },
+  ];
+
+  stats.forEach(({ label, value }) => {
+    const cell = document.createElement('div');
+    cell.className = 'stats-cell';
+    cell.innerHTML = `<div class="stats-value">${value}</div><div class="stats-label">${label}</div>`;
+    summary.appendChild(cell);
+  });
+
+  // Large chart
+  const CHART_LIMIT = 10;
+  const visibleHistory = route.history.slice(-CHART_LIMIT);
+  const runOffset = route.history.length - visibleHistory.length;
+  chartWrap.appendChild(buildLargeHistoryChart(visibleHistory, pb, runOffset));
+}
+
+function formatTimeAxis(ms) {
+  const totalSec = Math.round(ms / 1000);
+  const secs = totalSec % 60;
+  const mins = Math.floor(totalSec / 60);
+  const hours = Math.floor(mins / 60);
+  if (hours > 0) {
+    return `${hours}:${String(mins % 60).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+function buildLargeHistoryChart(history, pbMs, runOffset = 0) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const W = 500, H = 200, PX_L = 52, PX_R = 20, PY = 16;
+
+  const min = Math.min(...history);
+  const max = Math.max(...history);
+  const range = max - min || 1;
+
+  // Add 10% padding above/below
+  const pad = range * 0.1;
+  const yMin = min - pad;
+  const yMax = max + pad;
+  const yRange = yMax - yMin;
+
+  const toX = i => history.length === 1
+    ? PX_L + (W - PX_L - PX_R) / 2
+    : PX_L + (i / (history.length - 1)) * (W - PX_L - PX_R);
+  const toY = ms => PY + (1 - (ms - yMin) / yRange) * (H - PY * 2);
+
+  const pts = history.map((ms, i) => ({ x: toX(i), y: toY(ms), ms }));
+
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', String(H));
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.classList.add('history-chart-large');
+
+  // Y-axis grid lines and labels (4 ticks)
+  const TICKS = 4;
+  for (let t = 0; t <= TICKS; t++) {
+    const tickMs = min + (t / TICKS) * range;
+    const tickY = toY(tickMs);
+
+    const gridLine = document.createElementNS(ns, 'line');
+    gridLine.setAttribute('x1', PX_L);
+    gridLine.setAttribute('x2', W - PX_R);
+    gridLine.setAttribute('y1', tickY);
+    gridLine.setAttribute('y2', tickY);
+    gridLine.setAttribute('stroke', '#0f3460');
+    gridLine.setAttribute('stroke-width', '1');
+    svg.appendChild(gridLine);
+
+    const label = document.createElementNS(ns, 'text');
+    label.setAttribute('x', PX_L - 6);
+    label.setAttribute('y', tickY + 4);
+    label.setAttribute('fill', '#a8dadc99');
+    label.setAttribute('font-size', '11');
+    label.setAttribute('text-anchor', 'end');
+    label.textContent = formatTimeAxis(tickMs);
+    svg.appendChild(label);
+  }
+
+  // PB reference line
+  const pbY = toY(pbMs);
+  const pbLine = document.createElementNS(ns, 'line');
+  pbLine.setAttribute('x1', PX_L);
+  pbLine.setAttribute('x2', W - PX_R);
+  pbLine.setAttribute('y1', pbY);
+  pbLine.setAttribute('y2', pbY);
+  pbLine.setAttribute('stroke', '#4caf5044');
+  pbLine.setAttribute('stroke-width', '1');
+  pbLine.setAttribute('stroke-dasharray', '4 3');
+  svg.appendChild(pbLine);
+
+  // PB label
+  const pbLabel = document.createElementNS(ns, 'text');
+  pbLabel.setAttribute('x', W - PX_R + 2);
+  pbLabel.setAttribute('y', pbY + 4);
+  pbLabel.setAttribute('fill', '#4caf5088');
+  pbLabel.setAttribute('font-size', '9');
+  pbLabel.textContent = 'PB';
+  svg.appendChild(pbLabel);
+
+  // Connecting line
+  if (pts.length >= 2) {
+    const polyline = document.createElementNS(ns, 'polyline');
+    polyline.setAttribute('points', pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+    polyline.setAttribute('fill', 'none');
+    polyline.setAttribute('stroke', '#4a3f7a');
+    polyline.setAttribute('stroke-width', '2');
+    svg.appendChild(polyline);
+  }
+
+  // Diamonds
+  const D = 6;
+  pts.forEach((p, i) => {
+    const g = document.createElementNS(ns, 'g');
+    const isPb = p.ms === pbMs;
+
+    const diamond = document.createElementNS(ns, 'polygon');
+    diamond.setAttribute('points', [
+      `${p.x},${p.y - D}`,
+      `${p.x + D},${p.y}`,
+      `${p.x},${p.y + D}`,
+      `${p.x - D},${p.y}`
+    ].join(' '));
+    diamond.setAttribute('fill', isPb ? '#4caf50' : '#8b80c8');
+
+    const title = document.createElementNS(ns, 'title');
+    title.textContent = `Run ${runOffset + i + 1}: ${formatTime(p.ms)}`;
+
+    g.appendChild(diamond);
+    g.appendChild(title);
+    svg.appendChild(g);
+  });
+
+  return svg;
 }
 
 // ── SETUP SCREEN ──────────────────────────────────────────────────────────────
@@ -236,6 +470,7 @@ function handleSaveRoute(andRun) {
         pb: pbReset ? null : existing.pb,
         goldSplits: pbReset ? Array(splitNames.length).fill(null) : existing.goldSplits,
         runCount: pbReset ? 0 : existing.runCount,
+        history: pbReset ? [] : existing.history,
       };
       activeRoute = routes[idx];
     }
@@ -247,6 +482,7 @@ function handleSaveRoute(andRun) {
       pb: null,
       goldSplits: Array(splitNames.length).fill(null),
       runCount: 0,
+      history: [],
     };
     routes.push(newRoute);
     activeRoute = newRoute;
@@ -507,8 +743,10 @@ function handleSave() {
     }
   });
 
-  // Increment run count
+  // Increment run count and record history
   activeRoute.runCount = (activeRoute.runCount || 0) + 1;
+  activeRoute.history = activeRoute.history || [];
+  activeRoute.history.push(totalMs);
 
   // Sync back to routes array
   const idx = routes.findIndex(r => r.id === activeRoute.id);
@@ -537,7 +775,7 @@ function handleKeydown(e) {
   } else if (e.code === 'Escape') {
     if (state === 'running') {
       resetRun();
-    } else if (state === 'finished') {
+    } else if (state === 'finished' || state === 'stats') {
       renderHome();
     }
   }
@@ -553,6 +791,7 @@ function init() {
 
   // Home
   document.getElementById('btn-new-route').addEventListener('click', () => renderSetup(null));
+  document.getElementById('btn-back-stats').addEventListener('click', renderHome);
 
   // Setup
   document.getElementById('btn-add-split').addEventListener('click', () => {
