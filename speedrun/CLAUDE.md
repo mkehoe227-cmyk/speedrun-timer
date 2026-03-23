@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git & GitHub
+
+The repo is at https://github.com/mkehoe227-cmyk/speedrun-timer. Commit and push to `main` whenever meaningful work is complete (new feature, bug fix, etc.). Use descriptive commit messages and always include the co-author trailer.
+
 ## Running the App
 
 Open `speedrun.html` directly in a browser — no build step or server required.
