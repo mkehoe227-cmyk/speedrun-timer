@@ -27,7 +27,7 @@ function loadRoutes() {
       const gold = Array.isArray(r.goldSplits) && r.goldSplits.length === len
         ? r.goldSplits
         : Array(len).fill(null);
-      return { id: r.id, name: r.name, splitNames: r.splitNames, pb, goldSplits: gold };
+      return { id: r.id, name: r.name, splitNames: r.splitNames, pb, goldSplits: gold, runCount: r.runCount || 0 };
     });
   } catch (_) {
     routes = [];
@@ -115,7 +115,8 @@ function buildRouteCard(route) {
   const meta = document.createElement('div');
   meta.className = 'route-card-meta';
   const splitWord = route.splitNames.length === 1 ? 'split' : 'splits';
-  meta.textContent = `${route.splitNames.length} ${splitWord}`;
+  const runWord = route.runCount === 1 ? 'run' : 'runs';
+  meta.textContent = `${route.splitNames.length} ${splitWord} · ${route.runCount || 0} ${runWord}`;
 
   const pb = document.createElement('div');
   if (route.pb) {
@@ -234,6 +235,7 @@ function handleSaveRoute(andRun) {
         splitNames,
         pb: pbReset ? null : existing.pb,
         goldSplits: pbReset ? Array(splitNames.length).fill(null) : existing.goldSplits,
+        runCount: pbReset ? 0 : existing.runCount,
       };
       activeRoute = routes[idx];
     }
@@ -244,6 +246,7 @@ function handleSaveRoute(andRun) {
       splitNames,
       pb: null,
       goldSplits: Array(splitNames.length).fill(null),
+      runCount: 0,
     };
     routes.push(newRoute);
     activeRoute = newRoute;
@@ -504,11 +507,15 @@ function handleSave() {
     }
   });
 
+  // Increment run count
+  activeRoute.runCount = (activeRoute.runCount || 0) + 1;
+
   // Sync back to routes array
   const idx = routes.findIndex(r => r.id === activeRoute.id);
   if (idx !== -1) routes[idx] = activeRoute;
 
   saveRoutes();
+  renderHome();
 }
 
 function handleDiscard() {
@@ -549,6 +556,12 @@ function init() {
 
   // Setup
   document.getElementById('btn-add-split').addEventListener('click', () => {
+    if (editingRouteId) {
+      const route = routes.find(r => r.id === editingRouteId);
+      if (route && route.pb) {
+        if (!confirm('Adding a split will reset all run data (PB, gold splits, and run count) for this route. Continue?')) return;
+      }
+    }
     const input = addSplitRow('');
     input.focus();
   });
