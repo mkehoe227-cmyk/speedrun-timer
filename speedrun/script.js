@@ -158,9 +158,20 @@ function buildRouteCard(route) {
   btnDel.title = 'Delete route';
   btnDel.addEventListener('click', () => handleDeleteRoute(route.id));
 
+  const btnShare = document.createElement('button');
+  btnShare.className = 'btn-secondary';
+  btnShare.textContent = 'Share';
+  btnShare.title = 'Copy shareable link';
+  btnShare.addEventListener('click', () => {
+    handleShare(route);
+    btnShare.textContent = 'Copied!';
+    setTimeout(() => { btnShare.textContent = 'Share'; }, 1500);
+  });
+
   actions.appendChild(btnRun);
   actions.appendChild(btnStats);
   actions.appendChild(btnEdit);
+  actions.appendChild(btnShare);
   actions.appendChild(btnDel);
 
   top.appendChild(info);
@@ -168,6 +179,12 @@ function buildRouteCard(route) {
   card.appendChild(top);
 
   return card;
+}
+
+function handleShare(route) {
+  const payload = btoa(JSON.stringify({ name: route.name, splitNames: route.splitNames }));
+  const url = `${location.origin}${location.pathname}#r=${payload}`;
+  navigator.clipboard.writeText(url).catch(() => {});
 }
 
 function buildHistoryChart(history) {
@@ -537,20 +554,21 @@ function buildSplitComparisonChart(completedSplits, pbSplits, splitNames) {
 
 // ── SETUP SCREEN ──────────────────────────────────────────────────────────────
 
-function renderSetup(route) {
+function renderSetup(route, prefill) {
   editingRouteId = route ? route.id : null;
   showOnly('screen-setup');
 
-  document.getElementById('setup-title').textContent = route ? 'Edit Route' : 'New Route';
-  document.getElementById('route-name-input').value = route ? route.name : '';
+  const isImport = !route && prefill;
+  document.getElementById('setup-title').textContent =
+    route ? 'Edit Route' : (isImport ? 'Import Route' : 'New Route');
+  document.getElementById('route-name-input').value =
+    route ? route.name : (prefill ? prefill.name : '');
   document.getElementById('split-list').innerHTML = '';
   hideSetupError();
 
-  if (route && route.splitNames.length > 0) {
-    route.splitNames.forEach(n => addSplitRow(n));
-  } else {
-    addSplitRow('');
-  }
+  const splits = route ? route.splitNames : (prefill ? prefill.splitNames : []);
+  if (splits.length > 0) splits.forEach(n => addSplitRow(n));
+  else addSplitRow('');
 }
 
 function addSplitRow(name) {
@@ -938,10 +956,7 @@ function handleKeydown(e) {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
-function init() {
-  loadRoutes();
-  renderHome();
-
+function wireEvents() {
   document.addEventListener('keydown', handleKeydown);
 
   // Home
@@ -967,6 +982,26 @@ function init() {
   document.getElementById('btn-save').addEventListener('click', handleSave);
   document.getElementById('btn-discard').addEventListener('click', handleDiscard);
   document.getElementById('btn-run-again').addEventListener('click', handleRunAgain);
+}
+
+function init() {
+  loadRoutes();
+
+  const hash = location.hash;
+  if (hash.startsWith('#r=')) {
+    try {
+      const prefill = JSON.parse(atob(hash.slice(3)));
+      if (prefill.name && Array.isArray(prefill.splitNames)) {
+        history.replaceState(null, '', location.pathname);
+        wireEvents();
+        renderSetup(null, prefill);
+        return;
+      }
+    } catch (_) {}
+  }
+
+  wireEvents();
+  renderHome();
 }
 
 init();
