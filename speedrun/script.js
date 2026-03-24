@@ -393,6 +393,148 @@ function buildLargeHistoryChart(history, pbMs, runOffset = 0) {
   return svg;
 }
 
+// ── SPLIT COMPARISON CHART ────────────────────────────────────────────────────
+
+function buildSplitComparisonChart(completedSplits, pbSplits, splitNames) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const W = 500, H = 200, LABEL_H = 58;
+  const PX_L = 52, PX_R = 60, PY_T = 16, PY_B = 20;
+  const N = splitNames.length;
+
+  const allTimes = [...completedSplits, ...pbSplits];
+  const min = Math.min(...allTimes);
+  const max = Math.max(...allTimes);
+  const range = max - min || 1;
+  const pad = range * 0.1;
+  const yMin = min - pad;
+  const yMax = max + pad;
+  const yRange = yMax - yMin;
+
+  const toX = i => N === 1
+    ? PX_L + (W - PX_L - PX_R) / 2
+    : PX_L + (i / (N - 1)) * (W - PX_L - PX_R);
+  const toY = ms => PY_T + (1 - (ms - yMin) / yRange) * (H - PY_T - PY_B);
+
+  const pbPts  = pbSplits.map((ms, i)         => ({ x: toX(i), y: toY(ms), ms }));
+  const runPts = completedSplits.map((ms, i)   => ({ x: toX(i), y: toY(ms), ms }));
+
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H + LABEL_H}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', String(H + LABEL_H));
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.classList.add('history-chart-large');
+
+  // Y-axis grid lines and labels
+  const TICKS = 4;
+  for (let t = 0; t <= TICKS; t++) {
+    const tickMs = min + (t / TICKS) * range;
+    const tickY = toY(tickMs);
+
+    const gridLine = document.createElementNS(ns, 'line');
+    gridLine.setAttribute('x1', PX_L);
+    gridLine.setAttribute('x2', W - PX_R);
+    gridLine.setAttribute('y1', tickY);
+    gridLine.setAttribute('y2', tickY);
+    gridLine.setAttribute('stroke', '#0f3460');
+    gridLine.setAttribute('stroke-width', '1');
+    svg.appendChild(gridLine);
+
+    const lbl = document.createElementNS(ns, 'text');
+    lbl.setAttribute('x', PX_L - 6);
+    lbl.setAttribute('y', tickY + 4);
+    lbl.setAttribute('fill', '#a8dadc99');
+    lbl.setAttribute('font-size', '11');
+    lbl.setAttribute('text-anchor', 'end');
+    lbl.textContent = formatTimeAxis(tickMs);
+    svg.appendChild(lbl);
+  }
+
+  // PB polyline
+  if (pbPts.length >= 2) {
+    const poly = document.createElementNS(ns, 'polyline');
+    poly.setAttribute('points', pbPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke', '#4a3f7a');
+    poly.setAttribute('stroke-width', '2');
+    svg.appendChild(poly);
+  }
+
+  // This run polyline
+  if (runPts.length >= 2) {
+    const poly = document.createElementNS(ns, 'polyline');
+    poly.setAttribute('points', runPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke', '#e8e0d0');
+    poly.setAttribute('stroke-opacity', '0.55');
+    poly.setAttribute('stroke-width', '2');
+    svg.appendChild(poly);
+  }
+
+  const D = 6;
+
+  // PB diamonds
+  pbPts.forEach((p, i) => {
+    const g = document.createElementNS(ns, 'g');
+    const diamond = document.createElementNS(ns, 'polygon');
+    diamond.setAttribute('points', [
+      `${p.x},${p.y - D}`, `${p.x + D},${p.y}`,
+      `${p.x},${p.y + D}`, `${p.x - D},${p.y}`
+    ].join(' '));
+    diamond.setAttribute('fill', '#8b80c8');
+    const title = document.createElementNS(ns, 'title');
+    title.textContent = `PB – ${splitNames[i]}: ${formatTime(p.ms)}`;
+    g.appendChild(diamond);
+    g.appendChild(title);
+    svg.appendChild(g);
+  });
+
+  // This run diamonds — colored per split
+  runPts.forEach((p, i) => {
+    const g = document.createElementNS(ns, 'g');
+    const faster = completedSplits[i] < pbSplits[i];
+    const diamond = document.createElementNS(ns, 'polygon');
+    diamond.setAttribute('points', [
+      `${p.x},${p.y - D}`, `${p.x + D},${p.y}`,
+      `${p.x},${p.y + D}`, `${p.x - D},${p.y}`
+    ].join(' '));
+    diamond.setAttribute('fill', faster ? '#39d353' : '#f05050');
+    const title = document.createElementNS(ns, 'title');
+    title.textContent = `${splitNames[i]}: ${formatTime(p.ms)}`;
+    g.appendChild(diamond);
+    g.appendChild(title);
+    svg.appendChild(g);
+  });
+
+  // Split name labels — rotated -45° to handle long names
+  splitNames.forEach((name, i) => {
+    const x = toX(i).toFixed(1);
+    const y = H + 14;
+    const lbl = document.createElementNS(ns, 'text');
+    lbl.setAttribute('x', x);
+    lbl.setAttribute('y', y);
+    lbl.setAttribute('fill', '#a8dadc99');
+    lbl.setAttribute('font-size', '10');
+    lbl.setAttribute('text-anchor', 'middle');
+    lbl.setAttribute('transform', `rotate(45, ${x}, ${y})`);
+    lbl.textContent = name;
+    svg.appendChild(lbl);
+  });
+
+  const wrap = document.createElement('div');
+
+  const legend = document.createElement('div');
+  legend.className = 'split-chart-legend';
+  legend.innerHTML =
+    '<span style="color:#8b80c8">\u25c6</span> PB' +
+    '<span style="color:#39d353">\u25c6</span> Faster' +
+    '<span style="color:#f05050">\u25c6</span> Slower';
+
+  wrap.appendChild(legend);
+  wrap.appendChild(svg);
+  return wrap;
+}
+
 // ── SETUP SCREEN ──────────────────────────────────────────────────────────────
 
 function renderSetup(route) {
@@ -704,11 +846,6 @@ function finishRun() {
     }
 
     // Highlight gold splits
-    const prevGold = activeRoute.goldSplits[i];
-    if (prevGold == null || splitMs < prevGold) {
-      tdTime.classList.add('gold');
-    }
-
     tr.appendChild(tdName);
     tr.appendChild(tdGold);
     tr.appendChild(tdTime);
@@ -717,10 +854,23 @@ function finishRun() {
   });
 
   document.getElementById('btn-save').disabled = false;
+
+  // Split comparison chart (only when a PB exists to compare against)
+  const chartWrap = document.getElementById('finish-split-chart');
+  if (activeRoute.pb) {
+    const pbSplits = activeRoute.pb.map((c, i) => i === 0 ? c : c - activeRoute.pb[i - 1]);
+    chartWrap.innerHTML = '';
+    chartWrap.appendChild(buildSplitComparisonChart(completedSplits, pbSplits, activeRoute.splitNames));
+    chartWrap.classList.remove('hidden');
+  } else {
+    chartWrap.innerHTML = '';
+    chartWrap.classList.add('hidden');
+  }
+
   showOnly('screen-finish');
 }
 
-function handleSave() {
+function saveCurrentRun() {
   document.getElementById('btn-save').disabled = true;
 
   const totalMs = completedSplits.reduce((a, b) => a + b, 0);
@@ -753,6 +903,10 @@ function handleSave() {
   if (idx !== -1) routes[idx] = activeRoute;
 
   saveRoutes();
+}
+
+function handleSave() {
+  saveCurrentRun();
   renderHome();
 }
 
@@ -761,6 +915,7 @@ function handleDiscard() {
 }
 
 function handleRunAgain() {
+  saveCurrentRun();
   startRun(activeRoute);
 }
 

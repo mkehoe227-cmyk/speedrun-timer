@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <title>Speedrun Timer</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -74,11 +77,12 @@
     <div id="finish-route-name"></div>
     <div id="finish-total-time"></div>
     <div id="finish-pb-comparison"></div>
+    <div id="finish-split-chart" class="hidden"></div>
     <table id="finish-splits-table">
       <thead>
         <tr>
           <th class="col-name">Split</th>
-          <th class="col-gold">Gold</th>
+          <th class="col-gold">PB</th>
           <th class="col-time">Time</th>
           <th class="col-delta">Delta</th>
         </tr>
