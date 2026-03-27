@@ -178,6 +178,13 @@ function buildRouteCard(route) {
   top.appendChild(actions);
   card.appendChild(top);
 
+  // HUD corner brackets
+  ['tl', 'tr', 'bl', 'br'].forEach(pos => {
+    const c = document.createElement('span');
+    c.className = `corner corner-${pos}`;
+    card.appendChild(c);
+  });
+
   return card;
 }
 
@@ -213,7 +220,7 @@ function buildHistoryChart(history) {
     const polyline = document.createElementNS(ns, 'polyline');
     polyline.setAttribute('points', pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
     polyline.setAttribute('fill', 'none');
-    polyline.setAttribute('stroke', '#4a3f7a');
+    polyline.setAttribute('stroke', '#00AACC');
     polyline.setAttribute('stroke-width', '1.5');
     svg.appendChild(polyline);
   }
@@ -228,7 +235,7 @@ function buildHistoryChart(history) {
       `${p.x},${p.y + D}`,
       `${p.x - D},${p.y}`
     ].join(' '));
-    diamond.setAttribute('fill', '#8b80c8');
+    diamond.setAttribute('fill', '#00D4FF');
     const title = document.createElementNS(ns, 'title');
     title.textContent = formatTime(p.ms);
     g.appendChild(diamond);
@@ -339,7 +346,7 @@ function buildLargeHistoryChart(history, pbMs, runOffset = 0) {
     gridLine.setAttribute('x2', W - PX_R);
     gridLine.setAttribute('y1', tickY);
     gridLine.setAttribute('y2', tickY);
-    gridLine.setAttribute('stroke', '#0f3460');
+    gridLine.setAttribute('stroke', '#1C2A3A');
     gridLine.setAttribute('stroke-width', '1');
     svg.appendChild(gridLine);
 
@@ -360,7 +367,7 @@ function buildLargeHistoryChart(history, pbMs, runOffset = 0) {
   pbLine.setAttribute('x2', W - PX_R);
   pbLine.setAttribute('y1', pbY);
   pbLine.setAttribute('y2', pbY);
-  pbLine.setAttribute('stroke', '#4caf5044');
+  pbLine.setAttribute('stroke', '#00D4FF44');
   pbLine.setAttribute('stroke-width', '1');
   pbLine.setAttribute('stroke-dasharray', '4 3');
   svg.appendChild(pbLine);
@@ -379,7 +386,7 @@ function buildLargeHistoryChart(history, pbMs, runOffset = 0) {
     const polyline = document.createElementNS(ns, 'polyline');
     polyline.setAttribute('points', pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
     polyline.setAttribute('fill', 'none');
-    polyline.setAttribute('stroke', '#4a3f7a');
+    polyline.setAttribute('stroke', '#00AACC');
     polyline.setAttribute('stroke-width', '2');
     svg.appendChild(polyline);
   }
@@ -397,7 +404,7 @@ function buildLargeHistoryChart(history, pbMs, runOffset = 0) {
       `${p.x},${p.y + D}`,
       `${p.x - D},${p.y}`
     ].join(' '));
-    diamond.setAttribute('fill', isPb ? '#4caf50' : '#8b80c8');
+    diamond.setAttribute('fill', isPb ? '#00FF88' : '#00D4FF');
 
     const title = document.createElementNS(ns, 'title');
     title.textContent = `Run ${runOffset + i + 1}: ${formatTime(p.ms)}`;
@@ -453,7 +460,7 @@ function buildSplitComparisonChart(completedSplits, pbSplits, splitNames) {
     gridLine.setAttribute('x2', W - PX_R);
     gridLine.setAttribute('y1', tickY);
     gridLine.setAttribute('y2', tickY);
-    gridLine.setAttribute('stroke', '#0f3460');
+    gridLine.setAttribute('stroke', '#1C2A3A');
     gridLine.setAttribute('stroke-width', '1');
     svg.appendChild(gridLine);
 
@@ -472,7 +479,7 @@ function buildSplitComparisonChart(completedSplits, pbSplits, splitNames) {
     const poly = document.createElementNS(ns, 'polyline');
     poly.setAttribute('points', pbPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
     poly.setAttribute('fill', 'none');
-    poly.setAttribute('stroke', '#4a3f7a');
+    poly.setAttribute('stroke', '#00AACC');
     poly.setAttribute('stroke-width', '2');
     svg.appendChild(poly);
   }
@@ -482,7 +489,7 @@ function buildSplitComparisonChart(completedSplits, pbSplits, splitNames) {
     const poly = document.createElementNS(ns, 'polyline');
     poly.setAttribute('points', runPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
     poly.setAttribute('fill', 'none');
-    poly.setAttribute('stroke', '#e8e0d0');
+    poly.setAttribute('stroke', '#00AACC');
     poly.setAttribute('stroke-opacity', '0.55');
     poly.setAttribute('stroke-width', '2');
     svg.appendChild(poly);
@@ -498,7 +505,7 @@ function buildSplitComparisonChart(completedSplits, pbSplits, splitNames) {
       `${p.x},${p.y - D}`, `${p.x + D},${p.y}`,
       `${p.x},${p.y + D}`, `${p.x - D},${p.y}`
     ].join(' '));
-    diamond.setAttribute('fill', '#8b80c8');
+    diamond.setAttribute('fill', '#0099CC');
     const title = document.createElementNS(ns, 'title');
     title.textContent = `PB – ${splitNames[i]}: ${formatTime(p.ms)}`;
     g.appendChild(diamond);
@@ -515,7 +522,7 @@ function buildSplitComparisonChart(completedSplits, pbSplits, splitNames) {
       `${p.x},${p.y - D}`, `${p.x + D},${p.y}`,
       `${p.x},${p.y + D}`, `${p.x - D},${p.y}`
     ].join(' '));
-    diamond.setAttribute('fill', faster ? '#39d353' : '#f05050');
+    diamond.setAttribute('fill', faster ? '#00FF88' : '#FF3366');
     const title = document.createElementNS(ns, 'title');
     title.textContent = `${splitNames[i]}: ${formatTime(p.ms)}`;
     g.appendChild(diamond);
@@ -543,9 +550,9 @@ function buildSplitComparisonChart(completedSplits, pbSplits, splitNames) {
   const legend = document.createElement('div');
   legend.className = 'split-chart-legend';
   legend.innerHTML =
-    '<span style="color:#8b80c8">\u25c6</span> PB' +
-    '<span style="color:#39d353">\u25c6</span> Faster' +
-    '<span style="color:#f05050">\u25c6</span> Slower';
+    '<span style="color:#0099CC">\u25c6</span> PB' +
+    '<span style="color:#00FF88">\u25c6</span> Faster' +
+    '<span style="color:#FF3366">\u25c6</span> Slower';
 
   wrap.appendChild(legend);
   wrap.appendChild(svg);
