@@ -1,0 +1,36 @@
+ Here's the dependency graph with parallelizable batches:                                                                                                                                    
+                                                                 
+  ---                                                                                                                                                                                         
+  Batch 0 — Must be first (sequential)
+  - Task 1: Scaffold (everything depends on it)                                                                                                                                               
+                                                                 
+  ---                                                                                                                                                                                         
+  Batch 1 — All parallel after Task 1                                                                                                                                                         
+  - Task 2: Schema validation module                                                                                                                                                          
+  - Task 3: Layout algorithm                                                                                                                                                                  
+  - Task 5: Electron main process + preload                                                                                                                                                   
+  - Task 12: SVG wobble filter (just edits index.html)                                                                                                                                        
+  - Task 13: planme skill (just a markdown file)                                                                                                                                              
+                                                                                                                                                                                              
+  ---                                                                                                                                                                                         
+  Batch 2 — Parallel, after their Batch 1 prerequisites                                                                                                                                       
+  - Task 4: Parser agent ← needs Task 3                                                                                                                                                       
+  - Task 6: Zustand store ← needs Task 2                         
+  - Task 7: App root layout ← needs Task 1 (write CSS + App.jsx shell)                                                                                                                        
+                                                                                                                                                                                              
+  ---                                                                                                                                                                                         
+  Batch 3 — Parallel after Tasks 6 + 7                                                                                                                                                        
+  - Task 8: Sidebar                                                                                                                                                                           
+  - Task 9: TabBar + OverviewPanel                               
+  - Task 10: PlanNode                                                                                                                                                                         
+                                                                                                                                                                                              
+  ---                                                                                                                                                                                         
+  Batch 4 — Sequential                                                                                                                                                                        
+  - Task 11: PlanCanvas + SubCanvas ← needs Task 10                                                                                                                                           
+                                                                 
+  ---                                                                                                                                                                                         
+  Batch 5 — Final                                                
+  - Task 14: E2E integration test ← needs everything                                                                                                                                          
+                                                                 
+  ---                                                                                                                                                                                         
+  The biggest wins are Batch 1 (5 agents at once) and Batch 3 (3 agents at once). Want to proceed with subagent-driven execution using this batching strategy?

@@ -1,0 +1,31 @@
+{
+  "name": "planme",
+  "version": "0.0.1",
+  "description": "Interactive flowchart viewer for Claude Code project plans",
+  "main": "./out/main/index.js",
+  "author": "",
+  "scripts": {
+    "start": "electron-vite preview",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "test": "vitest run --config electron.vite.config.js",
+    "test:watch": "vitest --config electron.vite.config.js"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.4.0",
+    "electron-vite": "^2.3.0",
+    "vitest": "^2.1.9",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/user-event": "^14.5.2",
+    "jsdom": "^25.0.1"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.3.6",
+    "@anthropic-ai/sdk": "^0.39.0",
+    "chokidar": "^3.6.0",
+    "uuid": "^11.0.5",
+    "zustand": "^5.0.3"
+  }
+}
