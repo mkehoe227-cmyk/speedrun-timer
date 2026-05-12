@@ -59,9 +59,9 @@ vaultRouter.get('/rot', (req, res) => {
     for (const { name, dir } of projects) {
       const files = walkDir(dir);
       if (files.length === 0) continue;
-      const newest = Math.max(...files.map(f => {
-        try { return fs.statSync(f).mtime.getTime(); } catch { return 0; }
-      }));
+      const newest = files.reduce((max, f) => {
+        try { return Math.max(max, fs.statSync(f).mtime.getTime()); } catch { return max; }
+      }, 0);
       const age = now - newest;
       if (age >= DAYS_14) {
         result.push({
@@ -81,6 +81,7 @@ vaultRouter.get('/rot', (req, res) => {
 
 vaultRouter.post('/rot/flag', (req, res) => {
   const { project } = req.body;
+  if (!project) return res.status(400).json({ ok: false, error: 'project required' });
   try {
     const vault = getVaultPath();
     const flagFile = path.join(vault, '📥 Inbox', 'AI Generated', 'rot-flagged.md');

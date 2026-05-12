@@ -73,4 +73,19 @@ describe('POST /api/vault/rot/flag', () => {
       path.join(TMP_VAULT, '📥 Inbox', 'AI Generated', 'rot-flagged.md'), 'utf8');
     expect(log).toContain('StaleProject');
   });
+
+  it('creates Inbox/AI Generated dir when absent', async () => {
+    const res = await request(app).post('/api/vault/rot/flag').send({ project: 'NewProject' });
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    const log = fs.readFileSync(
+      path.join(TMP_VAULT, '📥 Inbox', 'AI Generated', 'rot-flagged.md'), 'utf8');
+    expect(log).toContain('NewProject');
+  });
+
+  it('returns 400 when project is missing', async () => {
+    const res = await request(app).post('/api/vault/rot/flag').send({});
+    expect(res.status).toBe(400);
+    expect(res.body.ok).toBe(false);
+  });
 });
