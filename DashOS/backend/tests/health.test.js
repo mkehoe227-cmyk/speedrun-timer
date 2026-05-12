@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import fs from 'fs';
 import path from 'path';
@@ -15,7 +15,6 @@ beforeEach(() => {
 
 afterEach(() => {
   fs.rmSync(TMP_VAULT, { recursive: true, force: true });
-  vi.restoreAllMocks();
 });
 
 describe('GET /api/health/maps', () => {
@@ -40,10 +39,8 @@ describe('GET /api/health/maps', () => {
 });
 
 describe('GET /api/health/git', () => {
-  it('returns no-git when execSync throws', async () => {
-    const childProcess = await import('child_process');
-    vi.spyOn(childProcess, 'execSync').mockImplementation(() => { throw new Error('not a git repo'); });
-
+  it('returns no-git when vault has no git repo', async () => {
+    // TMP_VAULT has no git init, so execSync throws naturally
     const res = await request(app).get('/api/health/git');
     expect(res.status).toBe(200);
     expect(res.body.git).toBe(false);
