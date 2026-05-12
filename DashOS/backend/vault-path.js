@@ -1,3 +1,4 @@
+import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
@@ -10,7 +11,7 @@ export function getVaultPath() {
 export function vaultExists() {
   try {
     const p = getVaultPath();
-    return { ok: true, path: p };
+    return fs.existsSync(p) ? { ok: true, path: p } : { ok: false, path: p };
   } catch {
     return { ok: false, path: null };
   }
