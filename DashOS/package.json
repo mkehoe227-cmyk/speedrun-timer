@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
-    "backend": "cd backend && node server.js",
+    "start": "concurrently --names \"backend,frontend\" \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && node --watch server.js",
     "frontend": "cd frontend && npx vite",
     "test": "cd backend && npx vitest run"
   },
